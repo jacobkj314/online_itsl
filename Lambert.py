@@ -1,3 +1,8 @@
+'''
+This is just my scratch paper for testing out ideas from Lambert, D. (2021, August). Grammar interpretations and learning TSL online. In International Conference on Grammatical Inference (pp. 81-91). PMLR.
+Retrieved from https://proceedings.mlr.press/v153/lambert21a/lambert21a.pdf
+'''
+
 class Set:
 	def __init__(self, *_set):
 		self._set = set(_set)
@@ -49,16 +54,10 @@ class Set:
 	def update(self, es):
 		self._set.update(es)
 		self._hash = None
-	# I don't think I need methods to remove elements
+	# I don't need methods to remove elements
 
 
 K = 2
-
-sigma={}
-def accept_gold(w, k=K):#This is where I can manually encode a grammar
-	return True
-
-
 
 from itertools import combinations
 
@@ -241,4 +240,4 @@ sample = ['akkalkak','klark','kralk','karlakalra','akrala','aklara','rakklarkka'
 
 #this is a mtsl example adapted from the original paper's example
 import re
-sample2 = sample + [re.sub('a', 'e', w) for w in sample] #replace all as with es and also add them to the sample, so now there is a second vowel harmony tier
+sample2 = sample + [re.sub('a', 'e', w) for w in sample] #replace all as with es and also add them to the sample, so now there is a second tier with a vowel harmony
