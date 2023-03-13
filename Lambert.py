@@ -4,6 +4,9 @@ Retrieved from https://proceedings.mlr.press/v153/lambert21a/lambert21a.pdf
 '''
 
 class Set:
+	'''
+	This is just a wrapper class around python's set class, which allows Sets to be placed in other Sets
+	'''
 	def __init__(self, *_set):
 		self._set = set(_set)
 		self._rehash()
@@ -62,7 +65,9 @@ K = 2
 from itertools import combinations
 
 def dictUnion(a, b):
-	#create a dict and make Sets for each key
+	'''
+	for sets of augmented subsequences encoded as a dict from tuples of symbols to Sets of Sets, this function unions the two sets
+	'''
 	ans = dict()
 	for e in a:
 		ans[e] = Set()
@@ -78,6 +83,9 @@ def dictUnion(a, b):
 def f(w, k=K): #get attested factors
 	return Set(*(w[i:i+j] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
 def x(w, k=K): #get attested augmented subsequences, encoded as a dict from tuples to Sets of Sets
+	"""
+	This function retrieves the set of augmented subsequences and encodes them as a dict from tuples of symbols (subsequeces) to Sets of Sets (the inner sets are the intervener sets, while the outer sets are the sets of intervener sets)
+	"""
 	ansSet = set()
 	for j in range(1,k+1):#iterate across factor lengths - 1 to k inclusive
 		for xi in list(combinations(range(len(w)), j)):#look at each subsequence of indices
@@ -91,13 +99,16 @@ def x(w, k=K): #get attested augmented subsequences, encoded as a dict from tupl
 			ansDict[q] = Set()
 		ansDict[q].add(i)
 	return ansDict
-def r(asubs): #restrict augmented subsequences
+def r(asubs): 
+	"""
+	this function restricts augmented subsequences, keeping only the smallest ones needed
+	"""
 	new = dict()
 	for q in asubs:
 		i = asubs[q]
 		new[q] = Set()
 
-		#this is definitely super inefficient, but I've wasted enough time optimizing already
+		#there is definitely a more efficient way to discard strict supersets
 		for j in i:
 			needJ = True
 			for k in i:
@@ -109,16 +120,31 @@ def r(asubs): #restrict augmented subsequences
 	return new
 
 def grammar(k=K):
+	"""
+	Returns a blank grammar (rejecting every string) that can be used as a starting point for building grammars from input
+	The grammar consists of a Set() (of attested factors) a dict() (representing a set of augmented subsequences) and an int (the tier window width)
+	"""
 	return (Set(), dict(), k)
 def learn_step(g, w):
+	'''
+	Given an input grammar g and a string w, performs one online learning step
+	'''
 	gl, gs, k = g
 	return (gl.union(f(w, k=k)), r(dictUnion(gs, x(w, k=k))), k)
-def learn(samples, k=K):
-	g = grammar(k)
+def learn(samples, k=None, g=None):
+	'''
+	creates a new grammar or takes an existing grammar
+	applies learn_step to all strings in samples 
+	'''
+	k = k if k else (g[2] if g else K)
+	g = g if g else grammar(k)
 	for w in samples:
 		g = learn_step(g, w)
 	return g
 def scan(g, w):
+	'''
+	given a grammar g and a string w, returns whether the given grammar accepts w
+	'''
 	gl, gs, k = g
 	qi = r(dictUnion(gs, x(w, k=k)))
 	return f(w, k=k).issubset(gl) and all(((j in gs) and (qi[j].issubset(gs[j]))) for j in qi)
@@ -143,7 +169,6 @@ def accept(w):
 	odd = 1; even = 0
 	for s in w:
 		s = int(s)
-
 		if s % 2 == 1:
 			if s < odd:
 				return False
