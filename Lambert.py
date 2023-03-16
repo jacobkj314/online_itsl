@@ -266,3 +266,35 @@ sample = ['akkalkak','klark','kralk','karlakalra','akrala','aklara','rakklarkka'
 #this is a mtsl example adapted from the original paper's example
 import re
 sample2 = sample + [re.sub('a', 'e', w) for w in sample] #replace all as with es and also add them to the sample, so now there is a second tier with a vowel harmony
+
+
+
+
+surface = {(0,0):'S',(0,1):'s',(1,0):'Z',(1,1):'z',}
+underlying = {surface[f]:f for f in surface}
+def generate_mtsl_blockers():
+	w = ''
+	voice = randint(0,1); anterior = None
+	for _ in range(randint(5, 12)):
+		if randint(1,3) == 1:
+			w += 't'
+			anterior = None
+			continue
+		if anterior is None:
+			anterior = randint(0,1)
+		w += surface[(voice, anterior)]
+	return w
+def accept_mtsl_blockers(w):
+	voicing = [underlying[s][0] for s in w if s != 't']
+	if not all(s == voicing[0] for s in voicing):
+		return False
+	for blocked in w.split('t'):
+		anteriority = [underlying[s][0] for s in blocked]
+		if not all(s == anteriority[0] for s in anteriority):
+			return False
+	return True
+
+
+
+def failures(grammar, acceptor, sample):
+	return [x for x in sample if not (lambda w : acceptor(w) == scan(grammar,w))(x)]
