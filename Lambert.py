@@ -100,21 +100,21 @@ def dictUnion(a, b):
 def f(w, k=K, m=M): #get attested factors
 	w = itsl(w, m=m)
 	return Set(*(w[i:i+j] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
-def f(w, k=K, m=M): #get attested factors
+'''def f(w, k=K, m=M): #get attested factors
 	w = itsl(w, m=m)# # # # # Added new *m:m to skip ahead, ignoring overlaps
-	# # #return Set(*(w[i:i+j*m:m] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
-	return Set(*(w[i:i+j] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
+	return Set(*(w[i:i+j*m:m] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
+	# # # # #return Set(*(w[i:i+j] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
+'''
 def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from tuples to Sets of Sets
 	"""
 	This function retrieves the set of augmented subsequences and encodes them as a dict from tuples of symbols (subsequeces) to Sets of Sets (the inner sets are the intervener sets, while the outer sets are the sets of intervener sets)
 	"""
 
 	w=itsl(w, m=m) #first break the string into m-width symbols
-	m=1 # # # # # temporarily undoing changes
 	ansSet = set()
 	for j in range(1,k+1):#iterate across factor lengths, 1 to k inclusive
 		for xi in list(combinations(range(len(w)), j)):#look at each subsequence of indices
-			if True:# # # # #all(map(lambda pair: pair[1]-pair[0] >= m, combinations(xi,2))):#only proceed if no pair of selected m-width symbols overlap
+			if all(map(lambda pair: ((diff:=pair[1]-pair[0]) == m or diff >= 2*m), combinations(xi,2))):#only proceed if no pair of selected m-width symbols overlap and leave space for a whole number of interveners
 				qi = tuple(map(lambda x : w[x], xi))#look at the symbols at those indices
 				ii = Set(*(map(lambda x : w[x], [i for i in range(xi[0],xi[-1]) if all(abs(y-i) >=m for y in xi)])))#look at the symbols at the intervening and non-overlapping indices
 				if len(set(qi).intersection(set(ii))) == 0:#if there is no overlap in terms of selected characters, it is a valid subsequence
@@ -125,6 +125,10 @@ def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from
 			ansDict[q] = Set()
 		ansDict[q].add(i)
 	return ordered(ansDict)
+
+
+
+
 def r(asubs): 
 	"""
 	this function restricts augmented subsequences, keeping only the smallest ones needed
@@ -358,13 +362,14 @@ def failures(accept, sigma, count=None, k=K, m=M):
 	count = count if count else (k+1)*(m+1)
 	sigmastar = star(sigma, (k+1)*(m+1))
 	sample = list(filter(lambda *x: accept(*x), sigmastar))
+	sample = ['>'+w+'<' for w in sample]
 	g = learn(sample, k=k,m=m)
 	pointers.clear()
 	pointers.extend([sigmastar, sample, g])
-	return [(w, a, t) for w in star(sigma, count) if ((a := accept(w)) != (t:= scan(g,w)))]
+	return [(w, a, t) for w in star(sigma, count) if ((a := accept(w)) != (t:= scan(g,'>'+w+'<')))]
 
 #it is still failing on itsl, I haven't figured out how to ignore overlapping m-width symbols yet...
-rejects = failures(accept_itsl, 'ndx')
+rejects = failures(accept_itsl, 'nd',k=2,m=2)
 
 
 
