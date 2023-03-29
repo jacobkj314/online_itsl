@@ -5,11 +5,11 @@ Retrieved from https://proceedings.mlr.press/v153/lambert21a/lambert21a.pdf
 
 def nsorted(collection): #implement numerical sorting, rather than default lexicographical sorting
 	return sorted(collection, key = lambda element : (len(element), element))
-def star(sigma, maxLen):
-	result = []
+
+def star(sigma, maxLen, filt=lambda *x:True):
 	for count in range(maxLen+1):
-		result += list(filter(lambda *x:True, [''.join(w) for w in product(*[sigma for _ in range(count)])]))
-	return result
+		for result in filter(filt, (''.join(w) for w in product(*(sigma for _ in range(count))))):
+			yield result
 
 class Set:
 	'''
@@ -160,6 +160,9 @@ def r(asubs):
 
 def itsl(w, m=M):
 	return tuple([w[i:i+m] for i in range(len(w)-m+1)])
+def bound(w,k,m):
+	return '>'*(k*m-1) + w + '<'*(k*m-1)
+
 
 def grammar(k=K,m=M):
 	"""
@@ -172,6 +175,7 @@ def learn_step(g, w):
 	Given an input grammar g and a string w, performs one online learning step
 	'''
 	gl, gs, (k,m) = g
+	w = bound(w, k,m)
 	return (gl.union(f(w, k=k,m=m)), ordered(r(dictUnion(gs, x(w, k=k,m=m)))), (k,m))
 def learn(samples, k=None,m=None, g=None):
 	'''
@@ -189,6 +193,7 @@ def scan(g, w):
 	given a grammar g and a string w, returns whether the given grammar accepts w
 	'''
 	gl, gs, (k,m) = g
+	w=bound(w,k,m)
 	qi = r(dictUnion(gs, x(w, k=k,m=m)))
 	return f(w, k=k,m=m).issubset(gl) and all(((j in gs) and (qi[j].issubset(gs[j]))) for j in qi)
 
