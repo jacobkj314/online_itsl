@@ -105,7 +105,7 @@ def f(w, k=K, m=M): #get attested factors
 	return Set(*(w[i:i+j*m:m] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
 	# # # # #return Set(*(w[i:i+j] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
 '''
-def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from tuples to Sets of Sets
+'''def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from tuples to Sets of Sets
 	"""
 	This function retrieves the set of augmented subsequences and encodes them as a dict from tuples of symbols (subsequeces) to Sets of Sets (the inner sets are the intervener sets, while the outer sets are the sets of intervener sets)
 	"""
@@ -117,6 +117,27 @@ def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from
 			if all(map(lambda pair: ((diff:=pair[1]-pair[0]) == m or diff >= 2*m), combinations(xi,2))):#only proceed if no pair of selected m-width symbols overlap and leave space for a whole number of interveners
 				qi = tuple(map(lambda x : w[x], xi))#look at the symbols at those indices
 				ii = Set(*(map(lambda x : w[x], [i for i in range(xi[0],xi[-1]) if all(abs(y-i) >=m for y in xi)])))#look at the symbols at the intervening and non-overlapping indices
+				if len(set(qi).intersection(set(ii))) == 0:#if there is no overlap in terms of selected characters, it is a valid subsequence
+					ansSet.add((qi, ii))
+	ansDict = {() : Set(Set())}
+	for q, i in ansSet:
+		if ansDict.get(q) is None:
+			ansDict[q] = Set()
+		ansDict[q].add(i)
+	return ordered(ansDict)'''
+
+def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from tuples to Sets of Sets
+	"""
+	This function retrieves the set of augmented subsequences and encodes them as a dict from tuples of symbols (subsequeces) to Sets of Sets (the inner sets are the intervener sets, while the outer sets are the sets of intervener sets)
+	"""
+
+	w=itsl(w, m=m) #first break the string into m-width symbols
+	ansSet = set()
+	for j in range(1,k+1):#iterate across factor lengths, 1 to k inclusive
+		for xi in list(combinations(range(len(w)), j)):#look at each subsequence of indices
+			if True: # # # # # ignoring this condition temporarily # # # # # if all(map(lambda pair: ((diff:=pair[1]-pair[0]) == m or diff >= 2*m), combinations(xi,2))):#only proceed if no pair of selected m-width symbols overlap and leave space for a whole number of interveners
+				qi = tuple(map(lambda x : w[x], xi))#look at the symbols at those indices
+				ii = Set(*(map(lambda x : w[x], [i for i in range(xi[0],xi[-1]) if all(y != i for y in xi)])))#look at the symbols at the intervening and non-overlapping indices
 				if len(set(qi).intersection(set(ii))) == 0:#if there is no overlap in terms of selected characters, it is a valid subsequence
 					ansSet.add((qi, ii))
 	ansDict = {() : Set(Set())}
@@ -188,14 +209,27 @@ def learn(samples, k=None,m=None, g=None):
 	for w in samples:
 		g = learn_step(g, w)
 	return g
-def scan(g, w):
+def scan(g, w_raw, verbose=False):
 	'''
 	given a grammar g and a string w, returns whether the given grammar accepts w
 	'''
 	gl, gs, (k,m) = g
-	w=bound(w,k,m)
+	w=bound(w_raw,k,m)
+	for fgl in f(w, k=k,m=m):
+		if fgl not in gl:
+			if verbose: print(f"Rejected '{w_raw}', the length-{len(fgl)} substring {fgl} is unattested")
+			return False
 	qi = r(dictUnion(gs, x(w, k=k,m=m)))
-	return f(w, k=k,m=m).issubset(gl) and all(((j in gs) and (qi[j].issubset(gs[j]))) for j in qi)
+	for j in qi:
+		if j not in gs:
+			if verbose: print(f"Rejected {w_raw}, the length-{len(j)} subsequence {j} is unattested")
+			return False
+		for qij in qi[j]:
+			if qij not in gs[j]:
+				if verbose: print(f"Rejected '{w_raw}', the intervener-set {qi[j]} is not a subset of {gs[j]}")
+				return False
+	return True
+	#return f(w, k=k,m=m).issubset(gl) and all(((j in gs) and (qi[j].issubset(gs[j]))) for j in qi)
 
 
 #This is a dummy TSL-2 grammar for testing
