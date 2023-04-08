@@ -1,12 +1,27 @@
 '''
-This is just my scratch paper for testing out ideas from Lambert, D. (2021, August). Grammar interpretations and learning TSL online. In International Conference on Grammatical Inference (pp. 81-91). PMLR.
+This is my scratch paper for testing out ideas from Lambert, D. (2021, August). Grammar interpretations and learning TSL online. In International Conference on Grammatical Inference (pp. 81-91). PMLR.
 Retrieved from https://proceedings.mlr.press/v153/lambert21a/lambert21a.pdf
 '''
 
-def nsorted(collection): #implement numerical sorting, rather than default lexicographical sorting
+from itertools import combinations, product
+K = 2; M = 1 #default "hyperparameters" of this implementation. Corresponds to TSL-2 (and possibly MTSL-2 ??)
+
+def nsorted(collection): 
+	'''
+	This method implements numerical sorting, rather than default lexicographical sorting
+	'''
 	return sorted(collection, key = lambda element : (len(element), element))
 
+def ordered(d):
+	'''
+	Like nsorted, but for dictionaries
+	'''
+	return {k:d[k] for k in nsorted(d)}
+
 def star(sigma, maxLen, filt=lambda *x:True):
+	'''
+	Given an alphabet sigma (an Iterable), a maximum length, and (optionally) a filter, this method returns every string in that alphabet up to that length that is accepted by the filter 
+	'''
 	for count in range(maxLen+1):
 		for result in filter(filt, (''.join(w) for w in product(*(sigma for _ in range(count))))):
 			yield result
@@ -18,7 +33,6 @@ class Set:
 	def __init__(self, *_set):
 		self._set = set(_set)
 		self._rehash()
-		self._ordered = False; self._order()
 
 	def _rehash(self):
 		self._hash = tuple(nsorted(self._set)).__hash__()
@@ -26,18 +40,12 @@ class Set:
 		if self._hash is None:
 			self._rehash()
 		return self._hash
-	
-	def _order(self):
-		if not self._ordered:
-			self._set = {e for e in nsorted(self._set)}
-			self._ordered = True
 
 	def __eq__(self, other):
 		return self.__class__ == other.__class__ and self._set == other._set
 	def __len__(self):
 		return len(self._set)
 	def __repr__(self):
-		self._order()
 		return '{{{0}}}'.format(', '.join(map(repr, nsorted(self._set))))
 	def __str__(self):
 		return self.__repr__()
@@ -74,12 +82,8 @@ class Set:
 		self._hash = None; self._ordered = False
 	# I don't need methods to remove elements
 
-def ordered(d):
-	return {k:d[k] for k in nsorted(d)}
 
-K = 2; M = 1
 
-from itertools import combinations
 
 def dictUnion(a, b):
 	'''
@@ -97,47 +101,27 @@ def dictUnion(a, b):
 		ans[e].update(b[e])
 	return ans
 
-def f(w, k=K, m=M): #get attested factors
-	w = itsl(w, m=m)
+
+#These are the main three algorithms introduced in the paper, adapted to account for ITSL m-width symbols
+
+def f(w, k=K, m=M): 
+	'''
+	This gets the attested substrings of the m-width symbols within the string w
+	'''
+	w = itsl(w, m=m)#first break the string into m-width symbols
 	return Set(*(w[i:i+j] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
-'''def f(w, k=K, m=M): #get attested factors
-	w = itsl(w, m=m)# # # # # Added new *m:m to skip ahead, ignoring overlaps
-	return Set(*(w[i:i+j*m:m] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
-	# # # # #return Set(*(w[i:i+j] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
-'''
-'''def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from tuples to Sets of Sets
+
+def x(w, k=K, m=M):
 	"""
 	This function retrieves the set of augmented subsequences and encodes them as a dict from tuples of symbols (subsequeces) to Sets of Sets (the inner sets are the intervener sets, while the outer sets are the sets of intervener sets)
 	"""
-
-	w=itsl(w, m=m) #first break the string into m-width symbols
-	ansSet = set()
-	for j in range(1,k+1):#iterate across factor lengths, 1 to k inclusive
-		for xi in list(combinations(range(len(w)), j)):#look at each subsequence of indices
-			if all(map(lambda pair: ((diff:=pair[1]-pair[0]) == m or diff >= 2*m), combinations(xi,2))):#only proceed if no pair of selected m-width symbols overlap and leave space for a whole number of interveners
-				qi = tuple(map(lambda x : w[x], xi))#look at the symbols at those indices
-				ii = Set(*(map(lambda x : w[x], [i for i in range(xi[0],xi[-1]) if all(abs(y-i) >=m for y in xi)])))#look at the symbols at the intervening and non-overlapping indices
-				if len(set(qi).intersection(set(ii))) == 0:#if there is no overlap in terms of selected characters, it is a valid subsequence
-					ansSet.add((qi, ii))
-	ansDict = {() : Set(Set())}
-	for q, i in ansSet:
-		if ansDict.get(q) is None:
-			ansDict[q] = Set()
-		ansDict[q].add(i)
-	return ordered(ansDict)'''
-
-def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from tuples to Sets of Sets
-	"""
-	This function retrieves the set of augmented subsequences and encodes them as a dict from tuples of symbols (subsequeces) to Sets of Sets (the inner sets are the intervener sets, while the outer sets are the sets of intervener sets)
-	"""
-
 	w=itsl(w, m=m) #first break the string into m-width symbols
 	ansSet = set()
 	for j in range(1,k+1):#iterate across factor lengths, 1 to k inclusive
 		for xi in list(combinations(range(len(w)), j)):#look at each subsequence of indices
 			if True: # # # # # ignoring this condition temporarily # # # # # if all(map(lambda pair: ((diff:=pair[1]-pair[0]) == m or diff >= 2*m), combinations(xi,2))):#only proceed if no pair of selected m-width symbols overlap and leave space for a whole number of interveners
 				qi = tuple(map(lambda x : w[x], xi))#look at the symbols at those indices
-				ii = Set(*(map(lambda x : w[x], [i for i in range(xi[0],xi[-1]) if all(y != i for y in xi)])))#look at the symbols at the intervening and non-overlapping indices
+				ii = Set(*(map(lambda x : w[x], [i for i in range(xi[0],xi[-1]) if all(y != i for y in xi)])))#look at the symbols at the intervening indices
 				if len(set(qi).intersection(set(ii))) == 0:#if there is no overlap in terms of selected characters, it is a valid subsequence
 					ansSet.add((qi, ii))
 	ansDict = {() : Set(Set())}
@@ -146,9 +130,6 @@ def x(w, k=K, m=M): #get attested augmented subsequences, encoded as a dict from
 			ansDict[q] = Set()
 		ansDict[q].add(i)
 	return ordered(ansDict)
-
-
-
 
 def r(asubs): 
 	"""
@@ -180,15 +161,27 @@ def r(asubs):
 
 
 def itsl(w, m=M):
+	'''
+	This breaks the string w into a list of m-width symbols (m is a "hyperparameter" of ITSL/MITSL languages)
+	For instance, if 
+	m==2, then w=asdfghjkl is represented as the sequence of symbols 'as','sd','df','fg','gh','hj','jk','kl'. If 
+	m==3, then it is represented as 								 'asd','sdf','dfg','fgh','ghj','hjk','jkl'
+	etc.
+	where each of these "m-width symbols" from sigma^m is treated like a singular symbol
+	'''
 	return tuple([w[i:i+m] for i in range(len(w)-m+1)])
 def bound(w,k,m):
+	'''
+	This adds word boundaries to the string. k*m-1 copies of > before the actual string, and k*m-1 copies of < after the actual string
+	The number k*m-1 was chosen so that the earliest possible k-factor of consecutive m-width symbols contains exactly one true symbol from the actual string
+	'''
 	return '>'*(k*m-1) + w + '<'*(k*m-1)
 
 
 def grammar(k=K,m=M):
 	"""
-	Returns a blank grammar (rejecting every string) that can be used as a starting point for building grammars from input
-	The grammar consists of a Set() (of attested factors) a dict() (representing a set of augmented subsequences) and an int (the tier window width)
+	Returns a blank grammar (one which rejects every string) that can be used as a starting point for building grammars from positive inputs
+	The grammar is a tuple consisting of a Set() (of attested factors) a dict() (representing a set of augmented subsequences) and a tuple of (an int (the tier window width) and an int (the symbol width))
 	"""
 	return (Set(), dict(), (k,m))
 def learn_step(g, w):
@@ -226,238 +219,7 @@ def scan(g, w_raw, verbose=False):
 			return False
 		for qij in qi[j]:
 			if qij not in gs[j]:
-				if verbose: print(f"Rejected '{w_raw}', the intervener-set {qi[j]} is not a subset of {gs[j]}")
+				if verbose: print(f"Rejected '{w_raw}', the intervener-set {qij} is not attested or entailed to intervene {j}")
 				return False
 	return True
 	#return f(w, k=k,m=m).issubset(gl) and all(((j in gs) and (qi[j].issubset(gs[j]))) for j in qi)
-
-
-#This is a dummy TSL-2 grammar for testing
-#the tier consists of odd digits, which cannot "decrease" through the word. So 11111, 33333, 99999, are all ok, 13339 is ok, but 75 is NOT
-from random import randint
-def generate():
-	w = ''
-	odd = 0
-	for _ in range(randint(5, 12)):
-		incr = randint(0,1)
-		if randint(0,1):#even
-			w += str(randint(0,4)*2)
-		else:#odd
-			if incr and odd < 4:
-				odd += 1
-			w += str(odd*2 + 1)
-	return w
-def accept(w):
-	odd = 1; even = 0
-	for s in w:
-		s = int(s)
-		if s % 2 == 1:
-			if s < odd:
-				return False
-			odd = s
-		else:
-			continue
-	return True
-
-
-
-#This is a dummy MTSL-2 grammar for testing
-#It has a second tier consisting of even digits with the same property as above, so 00000, 44444, 88888 are ok, as is 02468, but 20 is NOT ok.
-from random import randint
-def generate_mtsl():
-	w = ''
-	odd = 0; even = 0
-	for _ in range(randint(5, 12)):
-		incr = randint(0,1)
-		if randint(0,1):#even
-			if incr and even < 4:
-				even += 1
-			w += str(even*2)
-		else:#odd
-			if incr and odd < 4:
-				odd += 1
-			w += str(odd*2 + 1)
-	return w
-def accept_mtsl(w):
-	odd = 1; even = 0
-	for s in w:
-		s = int(s)
-
-		if s % 2 == 1:
-			if s < odd:
-				return False
-			odd = s
-		else:
-			if s < even:
-				return False
-			even = s
-	return True
-
-#This is another, more complicated dummy MTSL-2 grammar for testing
-#This grammar adds a 3rd tier, consisting of 0369, which also must occur in "increasing" order 
-from random import randint
-def generate_mtsl_b():
-	w = ''
-	odd = 0; even = 0; three = 0
-	for _ in range(randint(5, 12)):
-		incr = randint(0,1)
-		if randint(0,1):#even
-			if incr and even < 4:
-				even += 1
-			next = even*2
-		else:#odd
-			if incr and odd < 4:
-				odd += 1
-			next = odd*2 + 1
-		if next%3 == 0:
-			if next < three:
-				if next%2 == 0:
-					if even < 4:
-						even += 1
-				else:
-					if odd < 4:
-						odd += 1
-				continue
-			three = next
-		w += str(next)
-	return w
-def accept_mtsl_b(w):
-	odd = 1; even = 0; three = 0
-	for s in w: #check even and odd requirements
-		s = int(s)
-
-		if s % 2 == 1:
-			if s < odd:
-				return False
-			odd = s
-		else:
-			if s < even:
-				return False
-			even = s
-	for s in w: #check three requirements
-		s = int(s)
-		if s % 3 == 0:
-			if s < three:
-				return False
-			three = s
-	return True
-
-#This is the example from the original paper!
-sample = ['akkalkak','klark','kralk','karlakalra','akrala','aklara','rakklarkka','arkralkla','laarlraalr','kaaakkrka','klkkklrk','krlkrkl','alrla']
-
-#this is a mtsl example adapted from the original paper's example
-import re
-sample2 = sample + [re.sub('a', 'e', w) for w in sample] #replace all as with es and also add them to the sample, so now there is a second tier with a vowel harmony
-
-
-
-
-surface = {(0,0):'S',(0,1):'s',(1,0):'Z',(1,1):'z',}
-underlying = {surface[f]:f for f in surface}
-def generate_mtsl_blockers():
-	w = ''
-	voice = randint(0,1); anterior = None
-	for _ in range(randint(5, 12)):
-		if randint(1,3) == 1:
-			w += 't'
-			anterior = None
-			continue
-		if anterior is None:
-			anterior = randint(0,1)
-		w += surface[(voice, anterior)]
-	return w
-def accept_mtsl_blockers(w):
-	voicing = [underlying[s][0] for s in w if s != 't']
-	if not all(s == voicing[0] for s in voicing):
-		return False
-	for blocked in w.split('t'):
-		anteriority = [underlying[s][0] for s in blocked]
-		if not all(s == anteriority[0] for s in anteriority):
-			return False
-	return True
-
-
-def generate_itsl():
-	c = 'd' if randint(0,1) else 'n'
-	w = ''
-	for _ in range(randint(5,12)):
-		if randint(1,2) == 1:
-			if randint(1,2) == 1:
-				w += 'nd'
-			else:
-				w += c
-		else:
-			w += 'x'
-	return w
-def accept_itsl(w):
-	w = re.sub('nd','',w)
-	w = re.sub('x','',w)
-	return w in [x * len(w) for x in ('n','d')]
-
-#This is supposed to help automate testing
-pointers = []
-from itertools import product
-def failures(accept, sigma, count=None, k=K, m=M):
-	count = count if count else (k+1)*(m+1)
-	sigmastar = star(sigma, (k+1)*(m+1))
-	sample = list(filter(lambda *x: accept(*x), sigmastar))
-	sample = ['>'+w+'<' for w in sample]
-	g = learn(sample, k=k,m=m)
-	pointers.clear()
-	pointers.extend([sigmastar, sample, g])
-	return [(w, a, t) for w in star(sigma, count) if ((a := accept(w)) != (t:= scan(g,'>'+w+'<')))]
-
-#it is still failing on itsl, I haven't figured out how to ignore overlapping m-width symbols yet...
-rejects = failures(accept_itsl, 'nd',k=2,m=2)
-
-
-
-sh = ['SaSekuS', 'sasokos', 'SakuSuS', 'sakesas',
-'SeSukuS', 'sesukos', 'SekeSuS', 'sekoses',
-'SiSokeS', 'sisekos', 'SikiSoS', 'sikisis',
-'SoSokeS', 'sosakos', 'SokaSeS', 'sokusas',
-'SuSakiS', 'susukos', 'SukoSoS', 'sukasus',
-'SaSokuS', 'sasakus', 'SakuSiS', 'sakisos',
-'SeSokiS', 'sesukis', 'SekeSoS', 'sekeses',
-'SiSukoS', 'sisokos', 'SikeSaS', 'sikasos',
-'SoSokuS', 'sosikas', 'SokeSiS', 'sokosis',
-'SuSakeS', 'susokis', 'SukoSeS', 'sukesas']
-
-fl = ['SasokuS', 'saSakus', 'SaSekuS', 'sasokos',
-'SesokiS', 'seSukis', 'SeSukuS', 'sesukos',
-'SisukoS', 'siSokos', 'SiSokeS', 'sisekos',
-'SosokuS', 'soSikas', 'SoSokeS', 'sosakos',
-'SusakeS', 'suSokis', 'SuSakiS', 'susukos',
-'SakusiS', 'sakiSos', 'SakuSuS', 'sakesas',
-'SekesoS', 'sekeSes', 'SekeSuS', 'sekoses',
-'SikesaS', 'sikaSos', 'SikiSoS', 'sikisis',
-'SokesiS', 'sokoSis', 'SokaSeS', 'sokusas',
-'SukoseS', 'sukeSas', 'SukoSoS', 'sukasus']
-
-ifl = ['SasokuS', 'saSakus', 'SakusiS', 'sakiSos',
-'SesokiS', 'seSukis', 'SekesoS', 'sekeSes',
-'SisukoS', 'siSokos', 'SikesaS', 'sikaSos',
-'SosokuS', 'soSikas', 'SokesiS', 'sokoSis',
-'SusakeS', 'suSokis', 'SukoseS', 'sukeSas',
-'SasekuS', 'saSokos', 'SakusuS', 'sakeSas',
-'SesukuS', 'seSukos', 'SekesuS', 'sekoSes',
-'SisokeS', 'siSekos', 'SikisoS', 'sikiSis',
-'SosokeS', 'soSakos', 'SokaseS', 'sokuSas',
-'SusakiS', 'suSukos', 'SukosoS', 'sukaSus']
-
-test = ['sekoSos', 'SekoSos', 'sukisas', 'sukisaS', 'SoSukoS', 'SosukoS',
-'SasokaS', 'Sasokas', 'SeSekaS', 'seSekaS', 'sukesus', 'sukeSus',
-'suSekos', 'suSekoS', 'SokuSiS', 'SokuSis', 'sisakus', 'siSakus',
-'SikisaS', 'sikisaS', 'sisokus', 'Sisokus', 'SakaSoS', 'SakasoS',
-'seSokos', 'seSokoS', 'SekeSaS', 'SekeSas', 'SokuSoS', 'SokusoS',
-'SakosaS', 'sakosaS', 'SoSukiS', 'soSukiS', 'susekus', 'suSekus',
-'sukeSos', 'SukeSos', 'sikosus', 'sikosuS', 'sikasus', 'sikaSus',
-'SisikaS', 'Sisikas', 'susikas', 'Susikas', 'SaSakoS', 'SasakoS',
-'SikuSis', 'sikuSis', 'sokasiS', 'sokasis', 'soSakas', 'sosakas',
-'Sesakis', 'SesakiS', 'SikoSis', 'SikoSiS', 'SusekiS', 'SuSekiS',
-'sokisoS', 'SokisoS', 'Sesikos', 'sesikos', 'sakuSes', 'sakuses',
-'saSekeS', 'saSekes', 'saSikuS', 'SaSikuS', 'SekosaS', 'SekoSaS',
-'Sosikos', 'SosikoS', 'Sosakis', 'sosakis', 'saSukes', 'sasukes',
-'siSukiS', 'siSukis', 'siSokiS', 'SiSokiS', 'SesokaS', 'SeSokaS',
-'sekasiS', 'SekasiS', 'sekisoS', 'sekisos', 'sokaSas', 'sokasas',
-'SakeSes', 'sakeSes', 'SakiSus', 'SakiSuS', 'SukesiS', 'SukeSiS']
