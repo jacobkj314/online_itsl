@@ -4,13 +4,14 @@ Retrieved from https://proceedings.mlr.press/v153/lambert21a/lambert21a.pdf
 '''
 
 from itertools import combinations, product
+from tqdm import tqdm
 K = 2; M = 1 #default "hyperparameters" of this implementation. Corresponds to TSL-2 (and possibly MTSL-2 ??)
 
-def nsorted(collection): 
+def nsorted(collection, key = lambda x:x): 
 	'''
 	This method implements numerical sorting, rather than default lexicographical sorting
 	'''
-	return sorted(collection, key = lambda element : (len(element), element))
+	return sorted(collection, key = lambda element : (len(key(element)), key(element)))
 
 def ordered(d):
 	'''
@@ -199,7 +200,7 @@ def learn(samples, k=None,m=None, g=None):
 	k = k if k else (g[2][0] if g else K)
 	m = m if m else (g[2][1] if g else M)
 	g = g if g else grammar(k,m)
-	for w in samples:
+	for w in tqdm(samples, "Learning"):
 		g = learn_step(g, w)
 	return g
 def scan(g, w_raw, verbose=False):
@@ -208,18 +209,63 @@ def scan(g, w_raw, verbose=False):
 	'''
 	gl, gs, (k,m) = g
 	w=bound(w_raw,k,m)
+	decision = True
 	for fgl in f(w, k=k,m=m):
 		if fgl not in gl:
-			if verbose: print(f"Rejected '{w_raw}', the length-{len(fgl)} substring {fgl} is unattested")
-			return False
-	qi = r(dictUnion(gs, x(w, k=k,m=m)))
+			if verbose: 
+				print(f"Rejected '{w_raw}', the length-{len(fgl)} substring {fgl} is unattested")
+				decision = False # # # # # return False
+			else:
+				return False
+	qi = ordered(r(dictUnion(gs, x(w, k=k,m=m))))
 	for j in qi:
 		if j not in gs:
-			if verbose: print(f"Rejected {w_raw}, the length-{len(j)} subsequence {j} is unattested")
-			return False
-		for qij in qi[j]:
-			if qij not in gs[j]:
-				if verbose: print(f"Rejected '{w_raw}', the intervener-set {qij} is not attested or entailed to intervene {j}")
+			if verbose: 
+				print(f"Rejected {w_raw}, the length-{len(j)} subsequence {j} is unattested")
+			else:
 				return False
-	return True
-	#return f(w, k=k,m=m).issubset(gl) and all(((j in gs) and (qi[j].issubset(gs[j]))) for j in qi)
+			decision = False # # # # # return False
+		for qij in qi[j]:
+			if (j in gs) and qij not in gs[j]: #added the extra (first) condition to get a full, verbose printout 
+				if verbose: 
+					print(f"Rejected '{w_raw}', the intervener-set {qij} is not attested or entailed to intervene {j}")
+				else:
+					return False
+				decision = False# # # # # return False
+	return decision
+
+def wrong(g, acc, sigstar):
+    '''
+    This tests a grammar against an acceptor on a list of strings, and returns every string where the grammar gives the 'wrong' answer
+    '''
+    return [w for w in tqdm(sigstar, "Testing the grammar", ) if scan(g, w) != acc(w)]
+
+
+import re
+def tsl_acceptor(tier, restrictions):
+    def acceptor(w, verbose=False):
+        w_projected = re.sub(f'[^{"".join(tier)}]', '', '>'+w+'<')
+        decision = True
+        for restriction in nsorted(restrictions):
+            if (r :=''.join(restriction)) in w_projected:
+                if verbose:
+                    print(f"rejected {w} for containing {r} on tier {tier}: {w_projected}")
+                else:
+                    return False
+                decision = False # # # # # return False
+        return decision
+    return acceptor
+    #return lambda w : not any(''.join(restriction) in re.sub(f'[^{"".join(tier)}]', '', w) for restriction in restrictions) if w is not None else (tier, restrictions)
+
+def mtsl_acceptor(tsl_grammars):
+    def acceptor(w, verbose=False):
+        if w is None:
+            return nsorted([(nsorted(tier), nsorted(restrictions)) for tier, restrictions in tsl_grammars], key= lambda x:x[0])
+        decision = True
+        for tsl_grammar in nsorted(tsl_grammars, key = lambda x : x[0]):
+            if not tsl_acceptor(*tsl_grammar)(w, verbose):
+                if not verbose:
+                    return False
+                decision = False
+        return decision
+    return acceptor
