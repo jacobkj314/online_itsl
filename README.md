@@ -10,5 +10,9 @@ Additionally, a notebook for testing the consistency of the grammars formed by t
 
 
 Finally, because this TSL learner appears to also learn MTSL languages, mtsl_random.py contains code to randomly generate MTSL2 grammars and attempt to get the algorithm to learn them. 
-Usage: `python mtsl_random.py <length of longest string in the input sample> <length of strings to test on> [quick]`
+
+Usage:
+
+`python mtsl_random.py <length of longest string in the input sample> <length of strings to test on> [quick]`
+
 for example: `python mtsl_random.py 7 9 quick`
