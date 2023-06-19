@@ -15,4 +15,4 @@ Usage:
 
 `python mtsl_random.py <length of longest string in the input sample> <length of strings to test on> [quick]`
 
-for example: `python mtsl_random.py 7 9 quick`
+for example: `python mtsl_random.py 7 9 quick`, `python mtsl_random.py 8 10`
