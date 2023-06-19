@@ -196,6 +196,10 @@ def learn(samples, k=None,m=None, g=None):
 	'''
 	creates a new grammar or takes an existing grammar
 	applies learn_step to all strings in samples 
+
+	samples : the set of strings to learn from
+	k : the dependency width. I.e., restrictions are defined by k elements of a tier
+	m : the symbol width. I.e., elements of a tier are m-grams (this implies ITSL)
 	'''
 	k = k if k else (g[2][0] if g else K)
 	m = m if m else (g[2][1] if g else M)
@@ -205,7 +209,8 @@ def learn(samples, k=None,m=None, g=None):
 	return g
 def scan(g, w_raw, verbose=False):
 	'''
-	given a grammar g and a string w, returns whether the given grammar accepts w
+	given a grammar g and a string w_raw (without word boundary annotations), returns whether the given grammar accepts w_raw
+	some of the variable names are confusing because I was trying to mimic the symbolic/math notation from the original paper, sorry about that...
 	'''
 	gl, gs, (k,m) = g
 	w=bound(w_raw,k,m)
@@ -234,15 +239,37 @@ def scan(g, w_raw, verbose=False):
 				decision = False# # # # # return False
 	return decision
 
-def wrong(g, acc, sigstar):
-    '''
-    This tests a grammar against an acceptor on a list of strings, and returns every string where the grammar gives the 'wrong' answer
-    '''
-    return [w for w in tqdm(sigstar, "Testing the grammar", ) if scan(g, w) != acc(w)]
 
+
+
+################################################################################################
+# BELOW THIS LINE ARE SOME HELPER FUNCTIONS FOR USING THE ABOVE CODE
+################################################################################################
+
+
+
+
+
+
+
+
+
+def wrong(g, acc, sigstar, verbose = True):
+    '''
+    This tests a grammar (g) against an acceptor function (acc) on a list of strings (sigstar), and returns every string where the grammar gives the 'wrong' answer
+    '''
+    if verbose:
+        return [w for w in tqdm(sigstar, "Testing the grammar", ) if scan(g, w) != acc(w)]
+    for w in tqdm(sigstar, "Testing the grammar", ):
+        if scan(g, w) != acc(w):
+            return [w, "AMONG OTHERS"]
+    return []
 
 import re
 def tsl_acceptor(tier, restrictions):
+    '''
+    given a list of symbols for a tier and then a list of restricted substricngs on that tier, this creates an acceptor function for that language
+    '''
     def acceptor(w, verbose=False):
         w_projected = re.sub(f'[^{"".join(tier)}]', '', '>'+w+'<')
         decision = True
@@ -258,6 +285,9 @@ def tsl_acceptor(tier, restrictions):
     #return lambda w : not any(''.join(restriction) in re.sub(f'[^{"".join(tier)}]', '', w) for restriction in restrictions) if w is not None else (tier, restrictions)
 
 def mtsl_acceptor(tsl_grammars):
+    '''
+    given a list of pairs of tiers and their restrictions (as above), this creates an mtsl acceptor function
+    '''
     def acceptor(w, verbose=False):
         if w is None:
             return nsorted([(nsorted(tier), nsorted(restrictions)) for tier, restrictions in tsl_grammars], key= lambda x:x[0])
