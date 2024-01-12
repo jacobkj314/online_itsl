@@ -517,8 +517,7 @@ def harmonic_evaluator(data, rule):
         
     ratio = (correct / len(data))
     print(f"Percentage of harmonic words: {int(ratio * 100)}%.")
-    print(incorrect)
-    return incorrect
+    return ratio
 
 # ### Finnish
 # 
@@ -713,6 +712,7 @@ def evaluate_wfd_words(data, voiced = ("b")):
         
     ratio = (correct / len(data))
     print(f"Percentage of well-formed words: {int(ratio * 100)}%.")
+    return ratio # # #
 
 # As before, we can generate some words or pairs of words representing the rule of the word-final devoicing, and then check if the evaluator considers that those datasets are well-formed.
 
@@ -771,6 +771,7 @@ def evaluate_utp_strings(data):
         
     ratio = (correct / len(data))
     print(f"Percentage of well-formed tonal layers: {int(ratio * 100)}%.")
+    return ratio # # #
 
 # As before, we can verify the correctness of the generator using the evaluation functions.
 
@@ -819,6 +820,7 @@ def evaluate_first_last_words(data):
         
     ratio = (correct / len(newdata))
     print(f"Percentage of first-last harmonic words: {int(ratio * 100)}%.")
+    return ratio
 
 # ### Auxiliary functions
 
@@ -1416,7 +1418,8 @@ def generate_harmony(kind="first-last", length=range(2, 7), number=1000):
     
     # preparing data for easy generation
     lennum = {r:number // len(length) for r in length}
-    hmap = {"assimilation-two" : mitsl_harmony_generate}
+    hmap = {"assimilation-two" : mitsl_harmony_generate,
+            "assimilation-one" : itsl_harmony_generate}
     
     # generating the data
     data = [i for l in lennum for i in hmap[kind](lennum[l], l)]
@@ -1461,13 +1464,14 @@ def evaluate_mitsl_words(strings):
 
     print(f"Percentage of harmonic words: {int((correct / len(strings)) * 100)}%.")
     print(incorrect)
+    return correct / len(strings)
 
 # ### Create Dataset
 
 # In[ ]:
 
 
-assim_two = generate_harmony("assimilation-two", range(2, 8), number = 1000)
+assim_one = generate_harmony("assimilation-one", range(2, 8), number = 1000)
 
 # ### Quick reference to the datasets
 # 
@@ -1528,66 +1532,70 @@ def run_experiment(LEARNER, learner_name, learner_args, learner_kwargs, experime
     globals()[this].extract_alphabet()
     globals()[this].learn()
     globals()[this+"_sample"] = globals()[this].generate_sample(n = num_samples)
-    evaluator(globals()[this+"_sample"], *evaluator_args, **evaluator_kwargs)
+    ratio = evaluator(globals()[this+"_sample"], *evaluator_args, **evaluator_kwargs)
+    return globals()[this].grammar, globals()[this+"_sample"], ratio
+
+def run_experiment_with_printout    (LEARNER, learner_name, learner_args, learner_kwargs, experiment_name, data, num_samples, evaluator, evaluator_args, evaluator_kwargs):
+    grammar, sample, ratio = run_experiment(LEARNER, learner_name, learner_args, learner_kwargs, experiment_name, data, num_samples, evaluator, evaluator_args, evaluator_kwargs)
     print("--------------------------")
-    print("Generates such strings:", globals()[this+"_sample"][:15])
+    print("Generates such strings:", sample[:15])
     print("--------------------------")
-    print("Size of the grammar:", len(globals()[this].grammar))
+    print("Size of the grammar:", len(grammar))
     print("--------------------------")
-    print("Grammars:", globals()[this].grammar)
+    print("Grammars:", grammar)
 
 experiments =   [
                     {
                         "description":"Word-final devoicing, Artificial Grammar",
-                        "args":["1", toy_wfd, 1000, evaluate_wfd_words, [], {}],
+                        "args":["1", toy_wfd, 100000, evaluate_wfd_words, [], {}],
                     },
                     {
                         "description":"Word-final devoicing, German simplified",
-                        "args":["2", german_wfd_masked, 1000, evaluate_wfd_words, [], {"voiced":("b", "d", "g")}],
+                        "args":["2", german_wfd_masked, 100000, evaluate_wfd_words, [], {"voiced":("b", "d", "g")}],
                     },
                     {
                         "description":"Single vowel harmony without blocking, Artificial Grammar",
-                        "args":["4", toy_vhnb, 1000, harmonic_evaluator, [single_harmony_no_blockers], {}],
+                        "args":["4", toy_vhnb, 100000, harmonic_evaluator, [single_harmony_no_blockers], {}],
                     },
                     {
                         "description":"Single vowel harmony without blocking, Simplified Finnish harmony",
-                        "args":["5", finnish_harmony_masked, 1000, harmonic_evaluator, [front_harmony], {}],
+                        "args":["5", finnish_harmony_masked, 100000, harmonic_evaluator, [front_harmony], {}],
                     },
                     {
                         "description":"Single vowel harmony with blockers, Artificial Grammar",
-                        "args":["7", toy_vhwb, 1000, harmonic_evaluator, [single_harmony_with_blockers], {}],
+                        "args":["7", toy_vhwb, 100000, harmonic_evaluator, [single_harmony_with_blockers], {}],
                     },
                     {
                         "description":"Two vowel harmonies, no blockers, Artificial Grammar",
-                        "args":["8", toy_shnb, 1000, harmonic_evaluator, [double_harmony], {}],
+                        "args":["8", toy_shnb, 100000, harmonic_evaluator, [double_harmony], {}],
                     },
                     {
                         "description":"Two vowel harmonies with vowel blockers, Artificial Grammar",
-                        "args":["9", toy_mhwb, 1000, harmonic_evaluator, [backness_and_rounding], {}],
+                        "args":["9", toy_mhwb, 100000, harmonic_evaluator, [backness_and_rounding], {}],
                     },
                     {
                         "description":"Two vowel harmonies with vowel blockers, Simplified Turkish harmony",
-                        "args":["10", turkish_harmony_masked, 1000, harmonic_evaluator, [backness_and_rounding], {}],
+                        "args":["10", turkish_harmony_masked, 100000, harmonic_evaluator, [backness_and_rounding], {}],
                     },
-                    {
-                        "description":"Vowel harmony and consonant harmony, no blockers, Artificial Grammar",
-                        "args":["12", toy_dhnb, 1000, harmonic_evaluator, [double_harmony_no_blockers], {}],
-                    },
-                    {
-                        "description":"Vowel harmony and consonant harmony with blockers, Artificial Grammar",
-                        "args":["13", toy_dhwb, 1000, harmonic_evaluator, [double_harmony_with_blockers], {}],
-                    },
+                    #{
+                    #    "description":"Vowel harmony and consonant harmony, no blockers, Artificial Grammar",
+                    #    "args":["12", toy_dhnb, 100000, harmonic_evaluator, [double_harmony_no_blockers], {}],
+                    #},
+                    #{
+                    #    "description":"Vowel harmony and consonant harmony with blockers, Artificial Grammar",
+                    #    "args":["13", toy_dhwb, 100000, harmonic_evaluator, [double_harmony_with_blockers], {}],
+                    #},
                     {
                         "description":"Unbounded Tonal Plateauing, Artificial Grammar",
-                        "args":["14", toy_utp, 1000, evaluate_utp_strings, [], {}],
+                        "args":["14", toy_utp, 100000, evaluate_utp_strings, [], {}],
                     },
                     {
                         "description":"First-last harmony, Artificial Grammar",
-                        "args":["15", first_last_data, 1000, evaluate_first_last_words, [], {}],
+                        "args":["15", first_last_data, 100000, evaluate_first_last_words, [], {}],
                     },
                     {
-                        "description":"Two locally-driven long-distance assimilations (ITSL restrictions), Artificial Grammar",
-                        "args":["16", assim_two, 1000, evaluate_mitsl_words, [], {}],
+                        "description":"One locally-driven long-distance assimilations(ITSL restriction), Artificial Grammar",
+                        "args":["16", assim_one, 100000, evaluate_mitsl_words, [], {}],
                     },
                 ]
 """

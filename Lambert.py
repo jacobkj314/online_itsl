@@ -47,7 +47,7 @@ class Set:
 	def __len__(self):
 		return len(self._set)
 	def __repr__(self):
-		return '{{{0}}}'.format(', '.join(map(repr, nsorted(self._set))))
+		return 'Set({{{0}}})'.format(', '.join(map(repr, nsorted(self._set))))
 	def __str__(self):
 		return self.__repr__()
 	def __lt__(self, other):
@@ -274,8 +274,7 @@ class TSL_Learner:
                         if n == 0:
                             return
                 j += 1
-        return ((lambda x:x) if use_iterator else list)(generate_with_iterator())
-
+        return ((lambda x:x) if use_iterator else list)(tqdm(generate_with_iterator(), total=n))
 # In[12]:
 
 
@@ -294,3 +293,7 @@ class ITSL_Learner(TSL_Learner):
             '>'*(self.k*self.m-1) + w + '<'*(self.k*self.m-1), # add word-boundary symbols. Adding k*m-1 ensures that the first k-factor of consecutive m-width symbols contains exactly one true symbol, analogous to adding k-1 word boundary symbols for a TSL learner    
             self.m
         )
+    
+
+tsl_args = [TSL_Learner, "tsl", [], {'k':2}]
+itsl_args = [ITSL_Learner, "itsl", [], {'k':2, 'm':2}]
