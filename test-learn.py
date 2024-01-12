@@ -14,7 +14,8 @@ experiment_name, data, num_samples, evaluator, evaluator_args, evaluator_kwargs 
 this = learner_name + experiment_name
 
 with open(f"big/input_data/{this}_{trial_id}.txt", "w") as writer:
-    writer.writelines(data)
+    for w in data:
+        writer.writes(w + '\n')
 
 globals()[this] = LEARNER(*learner_args, **learner_kwargs)
 globals()[this].data = data +[''] # added to eliminate *>< on all tiers
