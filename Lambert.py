@@ -1,37 +1,37 @@
-'''
-This is my scratch paper for testing out ideas from Lambert, D. (2021, August). Grammar interpretations and learning TSL online. In International Conference on Grammatical Inference (pp. 81-91). PMLR.
-Retrieved from https://proceedings.mlr.press/v153/lambert21a/lambert21a.pdf
-'''
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Python Implementation of online TSL learning algorithm as presented in [Lambert (2021)](https://proceedings.mlr.press/v153/lambert21a/lambert21a.pdf)
+
+# ### imports and definitions
+
+# In[1]:
+
 
 from itertools import combinations, product
 from tqdm import tqdm
-K = 2; M = 1 #default "hyperparameters" of this implementation. Corresponds to TSL-2 (and possibly MTSL-2 ??)
+
+# ### Helper Methods
+
+# In[2]:
+
 
 def nsorted(collection, key = lambda x:x): 
 	'''
-	This method implements numerical sorting, rather than default lexicographical sorting
+	This method implements numerical sorting, rather than default lexicographical sorting of sorted()
 	'''
+	if collection.__class__ == dict:
+		return {key:collection[key] for key in nsorted(collection.keys())}
 	return sorted(collection, key = lambda element : (len(key(element)), key(element)))
 
-def ordered(d):
-	'''
-	Like nsorted, but for dictionaries
-	'''
-	return {k:d[k] for k in nsorted(d)}
+# In[3]:
 
-def star(sigma, maxLen, filt=lambda *x:True):
-	'''
-	Given an alphabet sigma (an Iterable), a maximum length, and (optionally) a filter, this method returns every string in that alphabet up to that length that is accepted by the filter 
-	'''
-	for count in range(maxLen+1):
-		for result in filter(filt, (''.join(w) for w in product(*(sigma for _ in range(count))))):
-			yield result
 
 class Set:
 	'''
 	This is just a wrapper class around python's set class, which allows Sets to be placed in other Sets
 	'''
-	def __init__(self, *_set):
+	def __init__(self, _set = {}):
 		self._set = set(_set)
 		self._rehash()
 
@@ -73,7 +73,9 @@ class Set:
 	def issuperset(self, other):
 		return self._set.issuperset(other._set)
 	def union(self, other):
-		return Set(*(self._set.union(other._set)))
+		return Set((self._set.union(other._set)))
+	def difference(self, other):
+		return Set(self._set.difference(other._set))
 
 	def add(self, e):
 		self._set.add(e)
@@ -81,9 +83,8 @@ class Set:
 	def update(self, es):
 		self._set.update(es)
 		self._hash = None; self._ordered = False
-	# I don't need methods to remove elements
 
-
+# In[4]:
 
 
 def dictUnion(a, b):
@@ -102,200 +103,194 @@ def dictUnion(a, b):
 		ans[e].update(b[e])
 	return ans
 
-
-#These are the main three algorithms introduced in the paper, adapted to account for ITSL m-width symbols
-
-def f(w, k=K, m=M): 
-	'''
-	This gets the attested substrings of the m-width symbols within the string w
-	'''
-	w = itsl(w, m=m)#first break the string into m-width symbols
-	return Set(*(w[i:i+j] for j in range(k+1+1) for i in range(len(w) - j + 1))) #first range is 0 to k+1 inclusive, second is from the start of the word to the end
-
-def x(w, k=K, m=M):
-	"""
-	This function retrieves the set of augmented subsequences and encodes them as a dict from tuples of symbols (subsequeces) to Sets of Sets (the inner sets are the intervener sets, while the outer sets are the sets of intervener sets)
-	"""
-	w=itsl(w, m=m) #first break the string into m-width symbols
-	ansSet = set()
-	for j in range(1,k+1):#iterate across factor lengths, 1 to k inclusive
-		for xi in list(combinations(range(len(w)), j)):#look at each subsequence of indices
-			if True: # # # # # ignoring this condition temporarily # # # # # if all(map(lambda pair: ((diff:=pair[1]-pair[0]) == m or diff >= 2*m), combinations(xi,2))):#only proceed if no pair of selected m-width symbols overlap and leave space for a whole number of interveners
-				qi = tuple(map(lambda x : w[x], xi))#look at the symbols at those indices
-				ii = Set(*(map(lambda x : w[x], [i for i in range(xi[0],xi[-1]) if all(y != i for y in xi)])))#look at the symbols at the intervening indices
-				if len(set(qi).intersection(set(ii))) == 0:#if there is no overlap in terms of selected characters, it is a valid subsequence
-					ansSet.add((qi, ii))
-	ansDict = {() : Set(Set())}
-	for q, i in ansSet:
-		if ansDict.get(q) is None:
-			ansDict[q] = Set()
-		ansDict[q].add(i)
-	return ordered(ansDict)
-
-def r(asubs): 
-	"""
-	this function restricts augmented subsequences, keeping only the smallest ones needed
-	"""
-	new = dict()
-	for q in asubs:
-		i = asubs[q]
-		new[q] = Set()
-
-		#there is definitely a more efficient way to discard strict supersets
-		for j in i:
-			needJ = True
-			for k in i:
-				if j.issuperset(k) and j != k: #discard strict supersets
-					needJ = False
-					break
-			if needJ:
-				new[q].add(j)
-	return new
+# In[5]:
 
 
+def width_j_substrings(w, j):
+    return tuple(w[i:i+j] for i in range(len(w)-j+1))
+
+# In[6]:
 
 
-
-
-
-
-
-
-def itsl(w, m=M):
-	'''
-	This breaks the string w into a list of m-width symbols (m is a "hyperparameter" of ITSL/MITSL languages)
-	For instance, if 
-	m==2, then w=asdfghjkl is represented as the sequence of symbols 'as','sd','df','fg','gh','hj','jk','kl'. If 
-	m==3, then it is represented as 								 'asd','sdf','dfg','fgh','ghj','hjk','jkl'
-	etc.
-	where each of these "m-width symbols" from sigma^m is treated like a singular symbol
-	'''
-	return tuple([w[i:i+m] for i in range(len(w)-m+1)])
-def bound(w,k,m):
-	'''
-	This adds word boundaries to the string. k*m-1 copies of > before the actual string, and k*m-1 copies of < after the actual string
-	The number k*m-1 was chosen so that the earliest possible k-factor of consecutive m-width symbols contains exactly one true symbol from the actual string
-	'''
-	return '>'*(k*m-1) + w + '<'*(k*m-1)
-
-
-def grammar(k=K,m=M):
-	"""
-	Returns a blank grammar (one which rejects every string) that can be used as a starting point for building grammars from positive inputs
-	The grammar is a tuple consisting of a Set() (of attested factors) a dict() (representing a set of augmented subsequences) and a tuple of (an int (the tier window width) and an int (the symbol width))
-	"""
-	return (Set(), dict(), (k,m))
-def learn_step(g, w):
-	'''
-	Given an input grammar g and a string w, performs one online learning step
-	'''
-	gl, gs, (k,m) = g
-	w = bound(w, k,m)
-	return (gl.union(f(w, k=k,m=m)), ordered(r(dictUnion(gs, x(w, k=k,m=m)))), (k,m))
-def learn(samples, k=None,m=None, g=None):
-	'''
-	creates a new grammar or takes an existing grammar
-	applies learn_step to all strings in samples 
-
-	samples : the set of strings to learn from
-	k : the dependency width. I.e., restrictions are defined by k elements of a tier
-	m : the symbol width. I.e., elements of a tier are m-grams (this implies ITSL)
-	'''
-	k = k if k else (g[2][0] if g else K)
-	m = m if m else (g[2][1] if g else M)
-	g = g if g else grammar(k,m)
-	for w in tqdm(samples, "Learning"):
-		g = learn_step(g, w)
-	return g
-def scan(g, w_raw, verbose=False):
-	'''
-	given a grammar g and a string w_raw (without word boundary annotations), returns whether the given grammar accepts w_raw
-	some of the variable names are confusing because I was trying to mimic the symbolic/math notation from the original paper, sorry about that...
-	'''
-	gl, gs, (k,m) = g
-	w=bound(w_raw,k,m)
-	decision = True
-	for fgl in f(w, k=k,m=m):
-		if fgl not in gl:
-			if verbose: 
-				print(f"Rejected '{w_raw}', the length-{len(fgl)} substring {fgl} is unattested")
-				decision = False # # # # # return False
-			else:
-				return False
-	qi = ordered(r(dictUnion(gs, x(w, k=k,m=m))))
-	for j in qi:
-		if j not in gs:
-			if verbose: 
-				print(f"Rejected {w_raw}, the length-{len(j)} subsequence {j} is unattested")
-			else:
-				return False
-			decision = False # # # # # return False
-		for qij in qi[j]:
-			if (j in gs) and qij not in gs[j]: #added the extra (first) condition to get a full, verbose printout 
-				if verbose: 
-					print(f"Rejected '{w_raw}', the intervener-set {qij} is not attested or entailed to intervene {j}")
-				else:
-					return False
-				decision = False# # # # # return False
-	return decision
-
-
-
-
-################################################################################################
-# BELOW THIS LINE ARE SOME HELPER FUNCTIONS FOR USING THE ABOVE CODE
-################################################################################################
-
-
-
-
-
-
-
-
-
-def wrong(g, acc, sigstar, verbose = True):
+class grammar_tuple(tuple):
     '''
-    This tests a grammar (g) against an acceptor function (acc) on a list of strings (sigstar), and returns every string where the grammar gives the 'wrong' answer
+    This is just a new definition for __len__ so that the len() of a grammar tuple is meaningful (rather than just always 3)
     '''
-    if verbose:
-        return [w for w in tqdm(sigstar, "Testing the grammar", ) if scan(g, w) != acc(w)]
-    for w in tqdm(sigstar, "Testing the grammar", ):
-        if scan(g, w) != acc(w):
-            return [w, "AMONG OTHERS"]
-    return []
+    def __len__(self):
+        return len(self[1]) + sum(len(item) for item in self[2].values())
 
-import re
-def tsl_acceptor(tier, restrictions):
-    '''
-    given a list of symbols for a tier and then a list of restricted substricngs on that tier, this creates an acceptor function for that language
-    '''
-    def acceptor(w, verbose=False):
-        w_projected = re.sub(f'[^{"".join(tier)}]', '', '>'+w+'<')
-        decision = True
-        for restriction in nsorted(restrictions):
-            if (r :=''.join(restriction)) in w_projected:
-                if verbose:
-                    print(f"rejected {w} for containing {r} on tier {tier}: {w_projected}")
-                else:
-                    return False
-                decision = False # # # # # return False
-        return decision
-    return acceptor
-    #return lambda w : not any(''.join(restriction) in re.sub(f'[^{"".join(tier)}]', '', w) for restriction in restrictions) if w is not None else (tier, restrictions)
+# ### Set the standard symbol and dependency widths
 
-def mtsl_acceptor(tsl_grammars):
-    '''
-    given a list of pairs of tiers and their restrictions (as above), this creates an mtsl acceptor function
-    '''
-    def acceptor(w, verbose=False):
-        if w is None:
-            return nsorted([(nsorted(tier), nsorted(restrictions)) for tier, restrictions in tsl_grammars], key= lambda x:x[0])
-        decision = True
-        for tsl_grammar in nsorted(tsl_grammars, key = lambda x : x[0]):
-            if not tsl_acceptor(*tsl_grammar)(w, verbose):
-                if not verbose:
-                    return False
-                decision = False
-        return decision
-    return acceptor
+# In[7]:
+
+
+K = 2 # dependency width
+M = 2 # symbol width
+
+# ### Learner definitions/prerequisites
+
+# "$ f : \Sigma^* \rightarrow \mathcal{P} \left( \Sigma^{\leq k+1} \right) $
+# gathers all and only those substrings of $w$ whose width is bounded above by $ k+1 $"
+
+# In[8]:
+
+
+def f(w, k=K):
+    return Set  (
+                    sum (
+                            tuple(width_j_substrings(w, j) for j in range(k+1+1)), #get every j-factor for every value of j up to k+1 inclusive
+                            ()
+                        )
+                )
+
+# "$ x : \Sigma^* \rightarrow \mathcal{P} \left( \Sigma^{\leq k} \times \mathcal{P} \left( \Sigma \right) \right) $ extracts the valid augmented subsequences of width bounded above by $k$"
+
+# In[9]:
+
+
+def x(w, k=K):
+
+    symbols_at_indices = lambda indices : tuple(w[index] for index in indices)
+    
+
+    augmented_subsequences = dict()         # Create a dictionary from subsequences to the set of their intervener sets
+    augmented_subsequences[()] = Set([Set()]) # The only set of symbols that can intervene a length-0 tuple is the empty set
+
+    for j in range(1, k+1):                                                             # iterate across factor lengths j, 1 to k inclusive
+        for subsequence_indices in list(combinations(range(len(w)), j)):                # look at each length-j subsequence of indices
+            subsequence = symbols_at_indices(subsequence_indices)               # extract the tuple of symbols at those selected indices
+            intervening_indices =   [                                                   # compute the intervening indices
+                                        intervening_index
+                                        for intervening_index in range(subsequence_indices[0], subsequence_indices[-1])
+                                        if intervening_index not in subsequence_indices
+                                    ]
+            intervening_set = Set(symbols_at_indices(intervening_indices))         # extract the set of symbols at the intervening indices
+
+            if set(subsequence).isdisjoint(set(intervening_set)):           # if there are no symbols shared by the subsequence and the interveners, this is a valid augmented subsequence
+                if subsequence not in augmented_subsequences:
+                    augmented_subsequences[subsequence] = Set()
+                augmented_subsequences[subsequence].add(intervening_set)    # add the set of augmented subsequences
+
+    return nsorted(augmented_subsequences)
+
+# "$ r :  \mathcal{P} \left( \Sigma^{\leq k} \times \mathcal{P} \left( \Sigma \right) \right) \rightarrow \mathcal{P} \left( \Sigma^{\leq k} \times \mathcal{P} \left( \Sigma \right) \right)$ restricts the set of augmented subsequences to exclude any that are entailed by any other"
+
+# In[10]:
+
+
+def r(augmented_subsequences):
+    return  nsorted (
+                        {
+                            subsequence_symbols: Set((
+                                                        intervener_symbol_set
+                                                        for intervener_symbol_set in intervener_symbol_sets
+                                                        if not any  (
+                                                                            intervener_symbol_set.issuperset(other_intervener_symbol_set)
+                                                                        and
+                                                                            intervener_symbol_set != other_intervener_symbol_set
+                                                                        for other_intervener_symbol_set in intervener_symbol_sets
+                                                                    )
+
+                                                    ))
+                            for subsequence_symbols, intervener_symbol_sets in augmented_subsequences.items()
+                        }
+                    )
+
+# ### Learners
+
+# "We can define a learner $ \varphi \left( \langle  G_{\ell}, G_s\rangle, w \right) = \langle G_{\ell} \cup f \left( w \right), r \left( G_s \cup x \left( w \right) \right) \rangle$" This is `learn_step`
+# 
+# "The composite grammar can immediately be used as an acceptor without further processing . . . 
+# $ \mathcal{L} \left( \langle G_{\ell}, G_s \rangle \right) = \{ w : f \left( w \right) \subseteq G_{\ell} \land r \left( G_s \cup x \left( w \right) \right) \subseteq G_s \}$
+# . In words, a string is accepted iff it has only permitted substrings and each of its valid augmented subsequences is attested or entailed by something that is attested." This is `scan`
+
+# In[11]:
+
+
+class TSL_Learner:
+    def __init__(self, k=K):
+        self.k = k          # dependency width
+        self.G_l = Set()    # substrings of length bounded above by k+1
+        self.G_s = dict()   # augmented subsequences of length bounded above by k
+        self._data_source = None
+    def __repr__(self):
+        return f'TSL-{self.k} Grammar\n{self.G_l}\n{self.G_s}'
+    def __call__(self, *args, **kwargs):
+        return self.scan(*args, **kwargs)
+    def extract_alphabet(self):
+        pass # This algorithm does not require this step for learning :)
+
+    @property
+    def grammar(self):
+        return grammar_tuple((self.k, self.G_l, self.G_s))
+
+    #This is an online algorithm, so it does not need a persistent copy of the strings it sees. To highlight this, I have enforced that the learner ONLY streams inputs from an iterator, without retaining a pointer to the complete input 
+    @property
+    def data(self):
+        return (w for w in [])
+    @data.setter
+    def data(self, W):
+        self._data_source = (w for w in W)
+
+
+    def preprocess(self, w):
+        return '>'*(self.k-1) + w + '<'*(self.k-1) # add word-boundary symbols
+
+    def scan(self, w_raw):
+        w = self.preprocess(w_raw)
+        return  (
+                        f(w, k = self.k).issubset(self.G_l)
+                    and
+                        all (
+                                (
+                                        subsequence in self.G_s.keys()
+                                    and
+                                        intervening_sets.issubset(self.G_s[subsequence])
+                                )
+                                for subsequence, intervening_sets in r(dictUnion(self.G_s, x(w, self.k))).items()
+                            )
+                )
+    
+    def learn_step(self, w_raw):
+        w = self.preprocess(w_raw)
+        self.G_l = self.G_l.union(f(w, k=self.k))
+        self.G_s = r(dictUnion(self.G_s, x(w, self.k)))
+    
+    def learn(self, W=None):
+        W = (w for w in (W if W is not None else self._data_source))
+        for w in tqdm(W, desc="Learning"):
+            self.learn_step(w)
+
+    def generate_sample(self, n, use_iterator=False):
+        def generate_with_iterator(n=n):
+            alphabet = set(''.join(''.join(substring) for substring in self.G_l)).difference('<','>')
+
+            j = 0
+            while True:
+                for w in map(''.join, product(alphabet, repeat=j)):
+                    if self.scan(w):
+                        yield w
+                        n -= 1
+                        if n == 0:
+                            return
+                j += 1
+        return ((lambda x:x) if use_iterator else list)(generate_with_iterator())
+
+# In[12]:
+
+
+class ITSL_Learner(TSL_Learner):
+    def __init__(self, k=K, m=M):
+        super().__init__(k)
+        self.m = m             # symbol width
+    def __repr__(self):
+        return f'ITSL-({self.k}, {self.m}) Grammar\n{self.G_l}\n{self.G_s}'
+    @property
+    def grammar(self):
+        return grammar_tuple(((self.k, self.m), self.G_l, self.G_s))
+
+    def preprocess(self, w):
+        return width_j_substrings( #break string into width-m symbols, i.e. symbols created from m adjacent symbols
+            '>'*(self.k*self.m-1) + w + '<'*(self.k*self.m-1), # add word-boundary symbols. Adding k*m-1 ensures that the first k-factor of consecutive m-width symbols contains exactly one true symbol, analogous to adding k-1 word boundary symbols for a TSL learner    
+            self.m
+        )
