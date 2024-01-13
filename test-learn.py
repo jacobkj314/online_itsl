@@ -13,7 +13,7 @@ experiment_name, data, num_samples, evaluator, evaluator_args, evaluator_kwargs 
 
 this = learner_name + experiment_name
 
-with open(f"big/input_data/{this}_{trial_id}.txt", "w") as writer:
+with open(f"big3/input_data/{this}_{trial_id}.txt", "w") as writer:
     for w in data:
         writer.write(w + '\n')
 
@@ -22,17 +22,17 @@ globals()[this].data = data +[''] # added to eliminate *>< on all tiers
 globals()[this].extract_alphabet()
 globals()[this].learn()
 
-with open(f"big/grammars/{this}_{trial_id}.txt", "w") as writer:
+with open(f"big3/grammars/{this}_{trial_id}.txt", "w") as writer:
     writer.write(str(globals()[this].grammar))
 
-with open(f"big/generations/{this}_{trial_id}.txt", "w") as writer:
+with open(f"big3/generations/{this}_{trial_id}.txt", "w") as writer:
     writer.write('')
 for w in globals()[this].generate_sample(10000):
-    with open(f"big/generations/{this}_{trial_id}.txt", "a") as writer:
+    with open(f"big3/generations/{this}_{trial_id}.txt", "a") as writer:
         writer.write(w + '\n')
 
-with open(f"big/generations/{this}_{trial_id}.txt", "r") as reader:
+with open(f"big3/generations/{this}_{trial_id}.txt", "r") as reader:
     W = reader.readlines()
 ratio = evaluator(W, *evaluator_args, **evaluator_kwargs)
-with open(f"big/ratio/{this}_{trial_id}.txt", "w") as writer:
+with open(f"big3/ratio/{this}_{trial_id}.txt", "w") as writer:
     writer.write(str(ratio))
