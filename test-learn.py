@@ -34,7 +34,7 @@ for w in globals()[this].generate_sample(10000, use_iterator=True):
         writer.write(w + '\n')
 
 with open(f"{out_dir}/generations/{this}_{trial_id}.txt", "r") as reader:
-    W = reader.readlines()
+    W = reader.read().splitlines()
 ratio = evaluator(W, *evaluator_args, **evaluator_kwargs)
 with open(f"{out_dir}/ratio/{this}_{trial_id}.txt", "w") as writer:
     writer.write(str(ratio))
