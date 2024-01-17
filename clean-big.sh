@@ -3,6 +3,8 @@ rm -rf big3
 rm big/*/*tsl8*
 rm big/*/*tsl14*
 
+rm big/ratio/*
+
 cp big2/input_data/* big/input_data/
 cp big2/grammars/* big/grammars/
 
