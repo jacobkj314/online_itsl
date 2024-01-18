@@ -1479,7 +1479,7 @@ def evaluate_itsl_words(strings):
             incorrect.add(string)
 
     print(f"Percentage of harmonic words: {int((correct / len(strings)) * 100)}%.")
-    print(incorrect)
+    # # # # # print(incorrect)
     return correct / len(strings)
 
 # ### Create Dataset
