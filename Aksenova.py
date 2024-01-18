@@ -1466,6 +1466,22 @@ def evaluate_mitsl_words(strings):
     print(incorrect)
     return correct / len(strings)
 
+def evaluate_itsl_words(strings):
+    rule_1 = SSRule(symbols = ("o", "e", "a"), target = "o",\
+                        right_context = "x", can_follow = ("a", "o"))
+    
+    correct = 0
+    incorrect = set()
+    for string in strings:
+        if evaluate_mitsl_word([rule_1], string):
+            correct += 1
+        else:
+            incorrect.add(string)
+
+    print(f"Percentage of harmonic words: {int((correct / len(strings)) * 100)}%.")
+    print(incorrect)
+    return correct / len(strings)
+
 # ### Create Dataset
 
 # In[ ]:
@@ -1595,7 +1611,7 @@ experiments =   [
                     },
                     {
                         "description":"One locally-driven long-distance assimilations(ITSL restriction), Artificial Grammar",
-                        "args":["16", assim_one, 100000, evaluate_mitsl_words, [], {}],
+                        "args":["16", assim_one, 100000, evaluate_itsl_words, [], {}],
                     },
                 ]
 """
