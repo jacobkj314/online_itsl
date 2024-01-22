@@ -1,5 +1,5 @@
 from sys import argv
-learner_id, experiment_id, trial_id = map(int, argv[1:])
+learner_id, experiment_id, trial_id, num_strings = map(int, argv[1:])
 
 from Aksenova import *
 from Lambert import *
@@ -29,6 +29,6 @@ with open(f"{out_dir}/grammars/{this}_{trial_id}.txt", "w") as writer:
 
 with open(f"{out_dir}/generations/{this}_{trial_id}.txt", "w") as writer:
     writer.write('')
-for w in globals()[this].generate_sample(10000, use_iterator=True):
+for w in globals()[this].generate_sample(num_strings, use_iterator=True):
     with open(f"{out_dir}/generations/{this}_{trial_id}.txt", "a") as writer:
         writer.write(w + '\n')

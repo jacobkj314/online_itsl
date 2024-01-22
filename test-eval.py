@@ -31,5 +31,6 @@ for file_path in glob(f"{out_dir}/generations/{this}_*.txt"):
         W += reader.read().splitlines()
 ratio = evaluator(tqdm(W), *evaluator_args, **evaluator_kwargs)
 print(this, f"{ratio*100}%")
+print()
 with open(f"{out_dir}/ratio/{this}.txt", "w") as writer:
     writer.write(str(ratio))

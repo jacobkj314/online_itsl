@@ -1563,55 +1563,47 @@ def run_experiment_with_printout    (LEARNER, learner_name, learner_args, learne
 experiments =   [
                     {
                         "description":"Word-final devoicing, Artificial Grammar",
-                        "args":["1", toy_wfd, 100000, evaluate_wfd_words, [], {}],
+                        "args":["1", toy_wfd, 1000, evaluate_wfd_words, [], {}],
                     },
                     {
                         "description":"Word-final devoicing, German simplified",
-                        "args":["2", german_wfd_masked, 100000, evaluate_wfd_words, [], {"voiced":("b", "d", "g")}],
+                        "args":["2", german_wfd_masked, 1000, evaluate_wfd_words, [], {"voiced":("b", "d", "g")}],
                     },
                     {
                         "description":"Single vowel harmony without blocking, Artificial Grammar",
-                        "args":["4", toy_vhnb, 100000, harmonic_evaluator, [single_harmony_no_blockers], {}],
+                        "args":["4", toy_vhnb, 1000, harmonic_evaluator, [single_harmony_no_blockers], {}],
                     },
                     {
                         "description":"Single vowel harmony without blocking, Simplified Finnish harmony",
-                        "args":["5", finnish_harmony_masked, 100000, harmonic_evaluator, [front_harmony], {}],
+                        "args":["5", finnish_harmony_masked, 1000, harmonic_evaluator, [front_harmony], {}],
                     },
                     {
                         "description":"Single vowel harmony with blockers, Artificial Grammar",
-                        "args":["7", toy_vhwb, 100000, harmonic_evaluator, [single_harmony_with_blockers], {}],
+                        "args":["7", toy_vhwb, 1000, harmonic_evaluator, [single_harmony_with_blockers], {}],
                     },
                     {
                         "description":"Two vowel harmonies, no blockers, Artificial Grammar",
-                        "args":["8", toy_shnb, 100000, harmonic_evaluator, [double_harmony], {}],
+                        "args":["8", toy_shnb, 1000, harmonic_evaluator, [double_harmony], {}],
                     },
                     {
                         "description":"Two vowel harmonies with vowel blockers, Artificial Grammar",
-                        "args":["9", toy_mhwb, 100000, harmonic_evaluator, [backness_and_rounding], {}],
+                        "args":["9", toy_mhwb, 1000, harmonic_evaluator, [backness_and_rounding], {}],
                     },
                     {
                         "description":"Two vowel harmonies with vowel blockers, Simplified Turkish harmony",
-                        "args":["10", turkish_harmony_masked, 100000, harmonic_evaluator, [backness_and_rounding], {}],
+                        "args":["10", turkish_harmony_masked, 1000, harmonic_evaluator, [backness_and_rounding], {}],
                     },
-                    #{
-                    #    "description":"Vowel harmony and consonant harmony, no blockers, Artificial Grammar",
-                    #    "args":["12", toy_dhnb, 100000, harmonic_evaluator, [double_harmony_no_blockers], {}],
-                    #},
-                    #{
-                    #    "description":"Vowel harmony and consonant harmony with blockers, Artificial Grammar",
-                    #    "args":["13", toy_dhwb, 100000, harmonic_evaluator, [double_harmony_with_blockers], {}],
-                    #},
                     {
                         "description":"Unbounded Tonal Plateauing, Artificial Grammar",
-                        "args":["14", toy_utp, 100000, evaluate_utp_strings, [], {}],
+                        "args":["14", toy_utp, 1000, evaluate_utp_strings, [], {}],
                     },
                     {
                         "description":"First-last harmony, Artificial Grammar",
-                        "args":["15", first_last_data, 100000, evaluate_first_last_words, [], {}],
+                        "args":["15", first_last_data, 1000, evaluate_first_last_words, [], {}],
                     },
                     {
                         "description":"One locally-driven long-distance assimilations(ITSL restriction), Artificial Grammar",
-                        "args":["16", assim_one, 100000, evaluate_itsl_words, [], {}],
+                        "args":["16", assim_one, 1000, evaluate_itsl_words, [], {}],
                     },
                 ]
 """
