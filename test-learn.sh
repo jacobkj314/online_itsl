@@ -1,15 +1,15 @@
 for learner in 0 1
 do
-    for experiment in 5 8 #0 2 4 6 9 10
+    for experiment in 0 2 4 5 6 8 9 10
     do
         for trial in 1 2 3 4 5 6 7 8 9 10
         do
-            python test-learn.py $learner $experiment $trial > big3000/transcripts/$learner-$experiment-$trial.txt &
+            python test-learn.py $learner $experiment $trial > experiments/transcripts/$learner-$experiment-$trial.txt &
         done
     done
 
-    #for experiment in 1 3 7 
-    #do
-    #    python test-learn.py $learner $experiment 0  > big/transcripts/$learner-$experiment-0.txt &
-    #done
+    for experiment in 1 3 7 
+    do
+        python test-learn.py $learner $experiment 0  > experiments/transcripts/$learner-$experiment-0.txt &
+    done
 done

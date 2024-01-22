@@ -4,7 +4,7 @@ learner_id, experiment_id, trial_id = map(int, argv[1:])
 from Aksenova import *
 from Lambert import *
 
-out_dir = "big3000"
+out_dir = "experiments"
 
 learner = [tsl_args , itsl_args][learner_id]
 experiment = experiments[experiment_id]['args']
@@ -32,9 +32,3 @@ with open(f"{out_dir}/generations/{this}_{trial_id}.txt", "w") as writer:
 for w in globals()[this].generate_sample(10000, use_iterator=True):
     with open(f"{out_dir}/generations/{this}_{trial_id}.txt", "a") as writer:
         writer.write(w + '\n')
-
-with open(f"{out_dir}/generations/{this}_{trial_id}.txt", "r") as reader:
-    W = reader.read().splitlines()
-ratio = evaluator(W, *evaluator_args, **evaluator_kwargs)
-with open(f"{out_dir}/ratio/{this}_{trial_id}.txt", "w") as writer:
-    writer.write(str(ratio))

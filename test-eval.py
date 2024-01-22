@@ -10,15 +10,12 @@ from Aksenova import *
 sys.stdout = stdout
 temp_stdout.close()
 
-# # # # # from Lambert import *
-
-out_dir = "big"
+out_dir = "experiments"
 
 learner_name = ["tsl", "itsl"][learner_id]# # # # # [tsl_args , itsl_args][learner_id]
 experiment = experiments[experiment_id]['args']
 
 
-# # # # # LEARNER, learner_name, learner_args, learner_kwargs = learner
 experiment_name, data, num_samples, evaluator, evaluator_args, evaluator_kwargs = experiment
 
 this = learner_name + experiment_name
