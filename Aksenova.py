@@ -811,11 +811,11 @@ def evaluate_first_last_words(data):
     Evaluates the correctness of if the given sample
     of first-last harmony (UR -> SF).
     """
-    newdata = [i for i in data if len(i) > 1]
+    # # # newdata = [i for i in data if len(i) > 1]
     correct = 0
     #for w in progressBar(newdata, prefix = "evaluating"):# #
     for w in newdata:# #
-        if w[0] == w[-1]:
+        if len(w) > 1 and w[0] == w[-1]: # # # 
             correct += 1
         
     ratio = (correct / len(newdata))
