@@ -26,6 +26,7 @@ import re
 import codecs
 from random import choice, randint
 
+
 # ## Step 2: defining general harmonic evaluator
 # 
 # Here some info on the artificial harmonic generator used here, originally from Chapters 3 and 4 of Aksënova (2020).
@@ -814,7 +815,7 @@ def evaluate_first_last_words(data):
     # # # newdata = [i for i in data if len(i) > 1]
     correct = 0
     #for w in progressBar(newdata, prefix = "evaluating"):# #
-    for w in newdata:# #
+    for w in data:# #
         if len(w) > 1 and w[0] == w[-1]: # # # 
             correct += 1
         

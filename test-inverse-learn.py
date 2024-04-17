@@ -66,6 +66,11 @@ def generate_from_evaluator(n, use_iterator=False, skip_train_instances=True):
 
 with open(f"{out_dir}/target_strings/{experiment_name}.txt", "w") as writer:
     writer.write('')
+
+print_real = print; print = lambda *args, **kwargs : None #need to silence prints by evaluator function
+
 for w in generate_from_evaluator(num_strings, use_iterator=True):
     with open(f"{out_dir}/target_strings/{experiment_name}.txt", "a") as writer:
         writer.write(w + '\n')
+
+print = print_real
