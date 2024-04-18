@@ -10,9 +10,9 @@ do
         done
     done
 
-    # # # #natural language experiments
-    # # # for experiment in 1 3 7 
-    # # # do
-    # # #     python test-learn.py $learner $experiment 0  > experiments/transcripts/$learner-$experiment-0.txt &
-    # # # done
+    #natural language experiments
+    for experiment in 1 3 7 
+    do
+        python test-inverse-learn.py $learner $experiment 0 $num_strings > experiments/transcripts/$learner-$experiment-0.txt &
+    done
 done
