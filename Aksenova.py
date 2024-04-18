@@ -517,7 +517,7 @@ def harmonic_evaluator(data, rule):
             incorrect.add(w)
         
     ratio = (correct / len(data))
-    print(f"Percentage of harmonic words: {int(ratio * 100)}%.")
+    #print(f"Percentage of harmonic words: {int(ratio * 100)}%.")
     return ratio
 
 # ### Finnish
@@ -712,7 +712,7 @@ def evaluate_wfd_words(data, voiced = ("b")):
         correct = (correct + 1) if w[-1] not in voiced else correct
         
     ratio = (correct / len(data))
-    print(f"Percentage of well-formed words: {int(ratio * 100)}%.")
+    #print(f"Percentage of well-formed words: {int(ratio * 100)}%.")
     return ratio # # #
 
 # As before, we can generate some words or pairs of words representing the rule of the word-final devoicing, and then check if the evaluator considers that those datasets are well-formed.
@@ -740,7 +740,7 @@ def utp_tones(string):
     """ Rewrites a tonal string with respect to the rules of UTP. """
     
     if set(string) not in [{"H", "L"}, {"H"}, {"L"}, set("")]:
-        print(string)
+        #print(string)
         raise ValueError("Unexpected symbols in the tonal string!")
     if not ("H" in string and "L" in string):
         return string
@@ -771,7 +771,7 @@ def evaluate_utp_strings(data):
         correct = (correct + 1) if utp_tones(w) == w else correct
         
     ratio = (correct / len(data))
-    print(f"Percentage of well-formed tonal layers: {int(ratio * 100)}%.")
+    #print(f"Percentage of well-formed tonal layers: {int(ratio * 100)}%.")
     return ratio # # #
 
 # As before, we can verify the correctness of the generator using the evaluation functions.
@@ -820,7 +820,7 @@ def evaluate_first_last_words(data):
             correct += 1
         
     ratio = (correct / len(newdata))
-    print(f"Percentage of first-last harmonic words: {int(ratio * 100)}%.")
+    # # # # # print(f"Percentage of first-last harmonic words: {int(ratio * 100)}%.")
     return ratio
 
 # ### Auxiliary functions
@@ -1463,8 +1463,8 @@ def evaluate_mitsl_words(strings):
         else:
             incorrect.add(string)
 
-    print(f"Percentage of harmonic words: {int((correct / len(strings)) * 100)}%.")
-    print(incorrect)
+    #print(f"Percentage of harmonic words: {int((correct / len(strings)) * 100)}%.")
+    #print(incorrect)
     return correct / len(strings)
 
 def evaluate_itsl_words(strings):
@@ -1479,7 +1479,7 @@ def evaluate_itsl_words(strings):
         else:
             incorrect.add(string)
 
-    print(f"Percentage of harmonic words: {int((correct / len(strings)) * 100)}%.")
+    #print(f"Percentage of harmonic words: {int((correct / len(strings)) * 100)}%.")
     # # # # # print(incorrect)
     return correct / len(strings)
 
