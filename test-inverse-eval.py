@@ -136,7 +136,7 @@ def evaluator_function(g, W):
 
 ratios = [evaluator_function(g, W) for g in G]
 ratio = mean(ratios)
-ratio_stdev = stdev(ratios)
+ratio_stdev = 0.0 if len(ratios) < 2 else stdev(ratios)
 
 print(this, "completeness:", f"{ratio*100}% ({ratio_stdev*100}%)")
 
