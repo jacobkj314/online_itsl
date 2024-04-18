@@ -816,7 +816,7 @@ def evaluate_first_last_words(data):
     correct = 0
     #for w in progressBar(newdata, prefix = "evaluating"):# #
     for w in newdata:# #
-        if len(w) > 1 and w[0] == w[-1]: # # # 
+        if len(w) < 1 or w[0] == w[-1]: # # # 
             correct += 1
         
     ratio = (correct / len(newdata))

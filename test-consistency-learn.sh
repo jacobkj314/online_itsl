@@ -6,13 +6,13 @@ do
     do
         for trial in 1 2 3 4 5 6 7 8 9 10 #running 10 trials of each experiment: since the input samples are randomly generated, this can result in a different grammar
         do
-            python test-learn.py $learner $experiment $trial $num_strings > experiments/transcripts/$learner-$experiment-$trial.txt &
+            python test-consistency-learn.py $learner $experiment $trial $num_strings > experiments/transcripts/$learner-$experiment-$trial.txt &
         done
     done
 
     #natural language experiments
     for experiment in 1 3 7 
     do
-        python test-learn.py $learner $experiment 0  $num_strings > experiments/transcripts/$learner-$experiment-0.txt &
+        python test-consistency-learn.py $learner $experiment 0  $num_strings > experiments/transcripts/$learner-$experiment-0.txt &
     done
 done
