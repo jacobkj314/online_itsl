@@ -28,9 +28,19 @@ from tqdm import tqdm
 
 for file_path in glob(f"{out_dir}/generations/{this}_*.txt"):
     with open(file_path) as reader:
-        W += reader.read().splitlines()
-ratio = evaluator(tqdm(W), *evaluator_args, **evaluator_kwargs)
-print(this, f"{ratio*100}%")
+        W.append(reader.read().splitlines())
+ratios = [evaluator(tqdm(i), *evaluator_args, **evaluator_kwargs) for i in W[:5000]]
+
+from statistics import mean, stdev
+
+ratio = mean(ratios)
+ratio_stdev = 0.0 if len(ratios) < 2 else stdev(ratios)
+
+
+print(this, "consistency:", f"{ratio*100}% ({ratio_stdev*100}%)")
+
 print()
-with open(f"{out_dir}/ratio/{this}.txt", "w") as writer:
+with open(f"{out_dir}/ratio_consistency/{this}.txt", "w") as writer:
     writer.write(str(ratio))
+    writer.write("\n")
+    writer.write(str(ratio_stdev))
